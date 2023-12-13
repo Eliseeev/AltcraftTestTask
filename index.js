@@ -20,18 +20,24 @@ for (var key in objNamesTheadTable) {
   thead.appendChild(tr);
   table.appendChild(thead);
 
-// CurrentPage меняется в зависимости от размеров экрана. Служит для начального отображения строк
-
-let currentPage = 25;
+  const screenHeight = window.innerHeight;
+  const lineHeight = 69;
+  let numberOfLines = Math.ceil(screenHeight / lineHeight) + 1;
 
 async function dataDownLoad(page, nextPosts){
     let response = await fetch(`https://raw.githubusercontent.com/altkraft/for-applicants/master/frontend/titanic/passengers.json?`);
     
     let data = await response.json()
 
-    const arrNamesBodyTable = ['F', 'M', 'NOT SURVIVED', 'SURVIVED'];
+    const arrNamesBodyTable = ['[F]', '[M]', 'NOT SURVIVED', 'SURVIVED'];
 
-    data.slice(nextPosts, page).map((item) => {
+    let filterPassengersData = data.filter((item) => {
+        if(item.gender !== '') {
+            return item
+        }
+    })
+    
+    let dataObj = filterPassengersData.slice(nextPosts, page).map((item) => {
    
         let tr = document.createElement('tr');
         tr.classList.add('tableRow');
@@ -77,34 +83,89 @@ async function dataDownLoad(page, nextPosts){
         }
           
         tbody.appendChild(tr);
+        
+        return {
+            survived,
+            name,
+            gender,
+            age,
+            ticket,
+        }
     })
-    table.appendChild(tbody)
 
+    table.appendChild(tbody)
     document.body.appendChild(table)
 
     document.getElementById('btn').addEventListener('click', function() {
         var inputValue = document.getElementById("searchInput").value;
-        let tableRows = document.querySelectorAll('.tableRow');
+
+        let theFirstModifiedData = dataObj.map((item) => {
+            if(item.survived === true){
+                return item.survived =`[ ${arrNamesBodyTable[3]} ]`, {...item}
+            }
+            if(item.survived === false){
+                return item.survived = `[ ${arrNamesBodyTable[2]} ]`, {...item}
+            }
+        })
+
+        let theSecondModifiedData = theFirstModifiedData.map((item) => {
+            if(item.gender === 'female'){
+                return item.gender = arrNamesBodyTable[0], {...item}
+            }
+            if(item.gender === 'male'){
+                return item.gender = arrNamesBodyTable[1], {...item}
+            }
+            if(item.age){
+                return item.age = `${Math.ceil(item.age)}y`, {...item}
+            }
+        })
+
+        let thirdModifiedData = theSecondModifiedData.map((item) => {
+            if(item.age){
+                return item.age = `${Math.ceil(item.age)}y`, {...item}
+            }
+        })
+
+        let tableRows = thirdModifiedData.filter(row => Object.values(row).some(value => value.toString().includes(inputValue)));
+        tbody.innerHTML = '';
         tableRows.forEach(row => {
-          if (row.textContent.includes(inputValue)) {
-            row.style.display = 'table-row';
-          } else {
-            row.style.display = 'none';
+          let tr = document.createElement('tr');
+          tr.classList.add('tableRow');
+
+          for (let key in row) {
+
+            let td = document.createElement('td');
+            td.classList.add('tableCell');
+            td.textContent = row[key];
+            tr.appendChild(td);
+
           }
+          tbody.appendChild(tr);
         });
       });
 }
 
-dataDownLoad(currentPage);
+dataDownLoad(numberOfLines);
 
 window.addEventListener('scroll', () => {
     let nextPosts = 0
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        nextPosts = currentPage
-        currentPage += 25
-        dataDownLoad(currentPage, nextPosts);
+        nextPosts = numberOfLines
+        console.log(nextPosts)
+        numberOfLines += numberOfLines 
+        dataDownLoad(numberOfLines, nextPosts);
     }
 });
+
+// if(key === 'name' || key === 'survived' || key === 'gender' || key === 'age' || key === 'ticket'){
+
+            //     if(row[key] === true) row[key] = `[ ${arrNamesBodyTable[3]} ]`
+            //     if(row[key] === false) row[key] = `[ ${arrNamesBodyTable[2]} ]`
+            //     if(row[key] === 'male') row[key] = arrNamesBodyTable[1];
+            //     if(row[key] === 'female') row[key] = arrNamesBodyTable[0];
+            // }
+
+
 
 
 
