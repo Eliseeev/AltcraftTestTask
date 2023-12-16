@@ -12,6 +12,7 @@ let tr = document.createElement('tr');
 let table = document.createElement('table');
 let tbody = document.createElement('tbody');
 tbody.classList.add('tableBody');
+let flag = true;
 
 for (var key in objNamesTheadTable) {
     let th = document.createElement('th');
@@ -24,9 +25,9 @@ for (var key in objNamesTheadTable) {
   const screenHeight = window.innerHeight;
   const lineHeight = 69;
   let numberOfLines = Math.ceil(screenHeight / lineHeight) + 1;
-
-async function dataDownLoad(page, nextPosts){
-    let response = await fetch(`https://raw.githubusercontent.com/altkraft/for-applicants/master/frontend/titanic/passengers.json?`);
+ 
+async function dataDownLoad(tickets, followingTickets){
+    const response = await fetch(`https://raw.githubusercontent.com/altkraft/for-applicants/master/frontend/titanic/passengers.json?`);
     
     const data = await response.json()
 
@@ -62,16 +63,23 @@ async function dataDownLoad(page, nextPosts){
         return value
     }
 
-    let passengerData = data.slice(nextPosts, page).map((item) => {
-       return {
+    const allPassengerData = data.map((item) => ({
         id: checkID(item.id),
         survived: checkSurvival(item.survived),
         name: checkName(item.name),
         gender: checkGender(item.gender),
         age: checkAge(item.age),
         ticket: checkTicket(item.ticket),
-       }
-    })
+    }))
+
+    const passengerData = data.slice(followingTickets, tickets).map((item) => ({
+        id: checkID(item.id),
+        survived: checkSurvival(item.survived),
+        name: checkName(item.name),
+        gender: checkGender(item.gender),
+        age: checkAge(item.age),
+        ticket: checkTicket(item.ticket),
+    }))
 
     const render = (value) => {
         return value.map((item) => {
@@ -92,27 +100,40 @@ async function dataDownLoad(page, nextPosts){
     table.appendChild(tbody)
     document.body.appendChild(table)
 
-
     document.getElementById('btn').addEventListener('click', function() {
+        flag = false;
         const inputValue = document.getElementById("searchInput").value;
 
-        if(!inputValue) return passengerData
+        let div = document.createElement('div');
+            div.classList.add('notFoundBlock');
+        let p = document.createElement('p');
+            p.classList.add('notFoundStr');
+            p.textContent = `Nothing was found for the query «${inputValue}»`
+        let p1 = document.createElement('p1');
+            p1.classList.add('notFoundStrChangeSearch')
+            p1.textContent = 'Change the search query'
+            div.appendChild(p)
+            div.appendChild(p1)
 
-        let tableRows = passengerData.filter(row => Object.values(row).some(value => value.toString().includes(inputValue)));
+        let tableRows = allPassengerData.filter(row => Object.values(row).some(value => value.toString().includes(inputValue)));
         tbody.innerHTML = '';
-        render(tableRows)
+
+        if(tableRows.length > 0) return render(tableRows);
+        else return document.body.appendChild(div)
       });
 }
 
 dataDownLoad(numberOfLines);
 
 window.addEventListener('scroll', () => {
-    let nextPosts = 0
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        nextPosts = numberOfLines
-        numberOfLines += numberOfLines 
-        dataDownLoad(numberOfLines, nextPosts);
-    }
+    let followingTickets = 0
+        if(flag){
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+                followingTickets = numberOfLines
+                numberOfLines += 50
+                dataDownLoad(numberOfLines, followingTickets);
+            }
+         }
 });
 
 

@@ -54,3 +54,18 @@ th {
     background-color:  rgb(182, 96, 96);
 }
 
+.notFoundBlock{
+    text-align: center;
+}
+
+.notFoundStr{
+    color: black;
+}
+
+.notFoundStrChangeSearch{
+    color: black;
+    font-size: 14px;
+}
+
+
+
